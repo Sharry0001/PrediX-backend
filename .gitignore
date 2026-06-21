@@ -1,0 +1,5 @@
+lstm311/
+venv/
+.venv/
+__pycache__/
+*.pyc

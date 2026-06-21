@@ -6,6 +6,7 @@ import joblib
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Input
+from sklearn.metrics import mean_absolute_percentage_error
 
 # Create folders automatically
 os.makedirs("models", exist_ok=True)
@@ -50,6 +51,13 @@ for ticker in stocks:
 
         # Shape fix
         y = y.reshape(-1, 1)
+        split = int(len(X) * 0.8)
+
+        X_train = X[:split]
+        X_test = X[split:]
+
+        y_train = y[:split]
+        y_test = y[split:]
 
         print("Training samples:", len(X))
 
@@ -67,13 +75,24 @@ for ticker in stocks:
         )
 
         model.fit(
-            X,
-            y,
+            X_train,
+            y_train,
             epochs=3,
             batch_size=32,
             verbose=1
         )
+        predictions = model.predict(X_test)
 
+        accuracy = 100 - (
+                  mean_absolute_percentage_error(
+                  y_test,
+                  predictions
+            ) * 100
+        )
+
+        accuracy = round(float(accuracy), 2)
+
+        print(f"Accuracy: {accuracy}%")
         model.save(
             f"models/{ticker}_model.keras"
         )
@@ -84,7 +103,11 @@ for ticker in stocks:
         )
 
         print(f"✅ {ticker} model saved")
-
+        
+        joblib.dump(
+        accuracy,
+        f"scalers/{ticker}_accuracy.save"
+        )
     except Exception as e:
 
         print(f"❌ Error training {ticker}: {e}")

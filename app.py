@@ -6,18 +6,16 @@ from flask import Flask, jsonify
 from tensorflow.keras.models import load_model
 import joblib
 import numpy as np
-import os
+ 
 
 app = Flask(__name__)
 CORS(app)
 models = {}
 scalers = {}
+accuracies ={}
 import os
 
-print("CURRENT FILES:")
-for root, dirs, files in os.walk("."):
-    for file in files:
-        print(os.path.join(root, file))
+
 stocks = [
     "AAPL",
     "MSFT",
@@ -25,12 +23,19 @@ stocks = [
 ]
 
 for stock in stocks:
-    models[stock] = load_model(
+
+   models[stock] = load_model(
     f"{stock}_model.keras"
 )
-    scalers[stock] = joblib.load(
+
+scalers[stock] = joblib.load(
     f"{stock}.save"
 )
+
+accuracies[stock] = joblib.load(
+    f"{stock}_accuracy.save"
+)
+print("Loaded Accuracy:", stock, accuracies[stock])
 # Home Route
 @app.route("/")
 def home():
@@ -62,28 +67,48 @@ def stock_data(ticker):
     }, 404
 @app.route("/stocks")
 def stocks():
-    return jsonify([
-        {
-            "ticker":"AAPL",
-            "price":210.45,
-            "change":1.25
-        },
-        {
-            "ticker":"MSFT",
-            "price":379.40,
-            "change":0.85
-        },
-        {
-            "ticker":"NVDA",
-            "price":145.20,
-            "change":2.10
-        },
-        {
-            "ticker":"TSLA",
-            "price":248.70,
-            "change":-1.35
-        }
-    ])
+
+    tickers = [
+        "AAPL",
+        "MSFT",
+        "GOOGL"
+    ]
+
+    result = []
+
+    for ticker in tickers:
+
+        try:
+
+            stock = yf.Ticker(ticker)
+
+            data = stock.history(period="2d")
+
+            current = round(
+                float(data["Close"].iloc[-1]),
+                2
+            )
+
+            previous = round(
+                float(data["Close"].iloc[-2]),
+                2
+            )
+
+            change = round(
+                ((current - previous) / previous) * 100,
+                2
+            )
+
+            result.append({
+                "ticker": ticker,
+                "price": current,
+                "change": change
+            })
+
+        except Exception as e:
+            print(e)
+
+    return jsonify(result)
 # Stock Prices Route
 @app.route("/indices")
 def indices():
@@ -223,12 +248,12 @@ def predict(ticker):
         )
 
         return {
-            "ticker": ticker,
-            "current_price": current_price,
-            "predicted_price": predicted_price,
-            "accuracy": 92,
-            "signal": signal
-        }
+    "ticker": ticker,
+    "current_price": current_price,
+    "predicted_price": predicted_price,
+    "accuracy": accuracies[ticker],
+    "signal": signal
+}
 
     except Exception as e:
 
