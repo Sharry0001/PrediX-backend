@@ -12,7 +12,12 @@ app = Flask(__name__)
 CORS(app)
 models = {}
 scalers = {}
+import os
 
+print("CURRENT FILES:")
+for root, dirs, files in os.walk("."):
+    for file in files:
+        print(os.path.join(root, file))
 stocks = [
     "AAPL",
     "MSFT",
@@ -21,12 +26,11 @@ stocks = [
 
 for stock in stocks:
     models[stock] = load_model(
-        f"models/{stock}_model.keras"
-    )
-
+    f"{stock}_model.keras"
+)
     scalers[stock] = joblib.load(
-        f"scalers/{stock}.save"
-    )
+    f"{stock}.save"
+)
 # Home Route
 @app.route("/")
 def home():
@@ -234,7 +238,7 @@ def predict(ticker):
             "error": str(e)
         }, 500
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 7860))
 
     app.run(
         host="0.0.0.0",
