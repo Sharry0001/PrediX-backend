@@ -15,8 +15,7 @@ scalers = {}
 stocks = [
     "AAPL",
     "MSFT",
-    "GOOGL",
-    "NVDA"
+    "GOOGL"
 ]
 
 for stock in stocks:
